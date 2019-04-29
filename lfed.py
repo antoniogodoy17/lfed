@@ -1,4 +1,4 @@
-from keras.models import model_from_json
+from keras.models import load_model
 import numpy as np
 import cv2 as cv
 from trainer import Trainer
@@ -7,37 +7,19 @@ from trainer import Trainer
 class LFED:
 
     def __init__(self, train=False):
-        # Font
-        self.font = cv.FONT_HERSHEY_SIMPLEX
-
-        # Models
-        self.faceDetection = cv.CascadeClassifier('./haarcascade_frontalface_default.xml')
-        self.modelPath = 'model.json'
-        self.modelWeightsPath = 'model_weights.h5'
-
-        # Emotions
-        self.emotionsList = ['happy', 'normal', 'sad', 'sleepy', 'surprised', 'wink']
-
-        # Load model
-        self.model = self.loadModel()
-
         if train:
             self.train()
 
-    def loadModel(self):
-        with open(self.modelPath, 'r') as json_file:
-            model = model_from_json(json_file.read())
-
-        #Load Weights
-        model.load_weights(self.modelWeightsPath)
-
-        # Get predictions from the trained model
-        model._make_predict_function()
-
-        return model
+        self.emotionsList = ['happy', 'normal', 'sad', 'sleepy', 'surprised', 'wink']
+        
+        # Face Model
+        self.faceDetection = cv.CascadeClassifier('./haarcascade_frontalface_default.xml')
+        
+        # Trained Model
+        self.model = load_model('./models/trainedModel', compile=False)
 
     def train(self):
-        trainer = Trainer(imageSize=48, imagesPath='./img/', batchSize=5)
+        trainer = Trainer(imageSize= 48, imagesPath='./img/', batchSize=5)
         trainer.execute()
 
     def start(self):
@@ -75,10 +57,10 @@ class LFED:
                     text = f'{emotion} = {prob * 100:.2f}'
 
                     # Draw probabilities by emotion
-                    cv.putText(frame, text, (10, (i * 20) + 20), self.font, 0.45, (255, 255, 255), 2)
+                    cv.putText(frame, text, (10, (i * 20) + 20), cv.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 2)
 
                     # Draw detected emotion
-                    cv.putText(frame, label, (faceX, faceY - 10), self.font, 0.45, (185, 128, 41), 2)
+                    cv.putText(frame, label, (faceX, faceY - 10), cv.FONT_HERSHEY_SIMPLEX, 0.45, (185, 128, 41), 2)
 
                     # Draw rectangle around the face
                     cv.rectangle(frame, (faceX, faceY), (faceX + faceWidth, faceY + faceHeight), (185, 128, 41), 2)
@@ -88,7 +70,7 @@ class LFED:
 
             # If face was not detected draw the following text on the frame
             else:
-                cv.putText(frame, 'No Face Detected', (20, 20), self.font, 0.45, (185, 128, 41), 2)
+                cv.putText(frame, 'No Face Detected', (20, 20), cv.FONT_HERSHEY_SIMPLEX, 0.45, (185, 128, 41), 2)
 
             # Show the frame
             cv.imshow('LFED (Live Face Emotion Detection)', frame)
@@ -102,5 +84,5 @@ class LFED:
 
 
 if __name__ == '__main__':
-    lfed = LFED()
+    lfed = LFED(train=False)
     lfed.start()
